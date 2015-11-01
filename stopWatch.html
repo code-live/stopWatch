@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script type="text/javascript">
+	//common variables
+	var timerConst = {
+		start1:0,
+		lastStoreTime : 0,
+		historyarr:{},
+		count:0
+	}
+	//to get current time
+	function firststart () {
+		timerConst.start1 = (new Date()).getTime();
+	}
+
+	//start button function
+	function start() {
+		document.getElementById('startBtn').disabled=true;
+		firststart();
+		clocktimer = setInterval("update()", 1);
+	}
+
+	//setinterval function to update time 
+	function update () {
+		var x = (new Date()).getTime();
+		// Get the difference in milliseconds.
+		var interval = x - timerConst.start1;
+		arrange('time',interval);
+		// Calculate how many days the interval contains. Subtract that
+		// many days from the interval to determine the remainder.
+	}
+
+	//to set the miliseconds value
+	function subNumber (number){
+		var number = number + "0000";
+		number = number.substring(0,2);
+		return number 
+	}
+
+	//make proper time value
+	function arrange(string,interval,reset,origin){
+		// Set the unit values in milliseconds.
+		var msecPerMinute = 1000 * 60;
+		var msecPerHour = msecPerMinute * 60;
+		var msecPerDay = msecPerHour * 24;
+		var $time = document.getElementById(string);
+		var days = Math.floor(interval / msecPerDay );
+		interval = interval - (days * msecPerDay );
+
+		// Calculate the hours, minutes, and seconds.
+		var hours = Math.floor(interval / msecPerHour );
+		interval = interval - (hours * msecPerHour );
+
+		var minutes = Math.floor(interval / msecPerMinute );
+		interval = interval - (minutes * msecPerMinute );
+
+		var seconds = Math.floor(interval / 1000 );
+		ms = interval % 1000;
+		var timeString = hours + ':' + minutes + ':' + seconds + ':' + subNumber(ms);
+		if(reset == 'reset' && string=='history'){
+			if(origin == "stop"){
+				timerConst.count = "";
+			}
+			timerConst.historyarr[origin+timerConst.count]=timeString;
+			localStorage.setItem('timerObject', JSON.stringify(timerConst.historyarr));
+			timerConst.count++;
+			return;
+		}
+		$time.innerHTML = timeString;
+	}
+
+	//stop button function to stop the timer and show the history
+	function stop(){
+		if(timerConst.start1 != 0){
+			var y = (new Date()).getTime();
+			var interval = y-timerConst.start1;
+			arrange('history',interval,'reset','stop');
+			timerConst.start1 =0;
+		}
+		clearInterval(clocktimer);
+		var retrievedObject = localStorage.getItem('timerObject');
+		retrievedObject=JSON.parse(retrievedObject);
+		CreateTable(retrievedObject);
+
+	//console.log('retrievedObject: ', JSON.parse(retrievedObject));
+		//currentTime('stop');
+		console.log(timerConst.historyarr);
+	}
+
+	//reset button function to reset all time values and set to zero
+	function reset() {
+		document.getElementById('startBtn').disabled=false;
+		var $tag = document.getElementById('time');
+		var $tag1 = document.getElementById('history');
+		stop();
+		timerConst.lastStoreTime = 0;
+		arrange('time',0,'reset');
+		$tag1.innerHTML = "";
+		localStorage.removeItem('timerObject');
+	}
+
+	//Time split function and store in local storage
+	function split() {
+		if(timerConst.lastStoreTime == 0){
+			timerConst.lastStoreTime = timerConst.start1;
+		}
+		currentTime('split');
+	}
+	//to arrange time values 
+	function currentTime(string){
+		var y = (new Date()).getTime();
+		var interval = y-timerConst.lastStoreTime;
+		arrange('history',interval,'reset',string);
+		timerConst.lastStoreTime = y;
+	}
+	//table to creat history
+	function CreateTable(data)
+	{
+	    var tablecontents = "";
+	    var stopData = "",stopPositin = "";
+	    tablecontents = "<table>";
+	    for (var prop in data)
+	   {
+		   	if(prop == "stop"){   //to handle stop position in json object
+		   		stopPositin = prop;
+		   		stopData = data[prop];
+		   		continue;
+		   	}
+	      tablecontents += "<tr>";
+	      tablecontents += "<td>" +prop + "</td>";
+	      tablecontents += "<td>" +data[prop] + "</td>";
+	      tablecontents += "</tr>";
+	   }	
+	   	  tablecontents += "<tr>";
+	      tablecontents += "<td>" +stopPositin + "</td>";
+	      tablecontents += "<td>" +stopData + "</td>";
+	      tablecontents += "</tr>";
+	   tablecontents += "</table>";
+	   document.getElementById("history").innerHTML = tablecontents;
+	}
+	</script>
+</head>
+<body>
+	<div id="time"></div>
+	<button id="startBtn" onclick="start()">start</button>
+	<button onclick="split()">split</button>
+	<button onclick="stop()">stop</button>
+	<button onclick="reset()">reset</button>
+	<br/>
+	<div>history section will come here when u tap on stop button
+	</div>
+	<div id="history"></div>
+</body>
+</html>
